@@ -2,17 +2,18 @@ package com.example.durai23.musicplayerapp;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.SeekBar;
@@ -20,13 +21,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.util.ArrayList;
-import java.util.List;
+
 import android.os.Handler;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.LogRecord;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -38,9 +38,9 @@ public class MainActivity extends AppCompatActivity {
     private TextView currentTime;
     private TextView totalDuration;
     private ImageButton playButton;
-    private ImageButton rewindButton;
-    private ImageButton forwardButton;
     private Handler mHandler = new Handler();
+    private int currentSong_Num = -1;
+    private AdapterView adapterView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,8 +63,6 @@ public class MainActivity extends AppCompatActivity {
         currentTime = (TextView) findViewById(R.id.currentTime);
         totalDuration = (TextView) findViewById(R.id.totalDuration);
         playButton = (ImageButton) findViewById(R.id.play_button);
-        rewindButton = (ImageButton) findViewById(R.id.back_button);
-        forwardButton = (ImageButton) findViewById(R.id.forward_button);
 
     }
 
@@ -83,41 +81,53 @@ public class MainActivity extends AppCompatActivity {
 
         final ListView listView = (ListView)findViewById(R.id.listView);
         File musicDir = new File(Environment.getExternalStorageDirectory().getPath());
-        scanMP3_Files(musicDir);
+        scanMP3_Files(musicDir);// scan the entire storage for mp3 files
         String[] songName_list = new String[songList.size()];
 
+        //get name of songs from list to display
         for(int i = 0; i < songName_list.length; i++){
             songName_list[i] = songList.get(i).getName().substring(0, songList.get(i).getName().length()-4);
         }
 
         listView.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,songName_list));
-
+        listView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            public void onItemClick(AdapterView<?> myAdapter, View myView, int myItemInt,
-                                    long mylng) {
+            public void onItemClick(AdapterView<?> myAdapter, View myView, int myItemInt,long mylng){
                 File selectedFromList = songList.get(myItemInt);
-                mp3Player.stop();
-                mp3Player.load(selectedFromList.getPath());
-                playButton.setImageResource(R.drawable.pause_button);
-                seekBar.setMax(mp3Player.getDuration()/1000);
 
+                for(int i = 0; i < myAdapter.getChildCount(); i++)
+                {
+                    myAdapter.getChildAt(i).setBackgroundColor(Color.WHITE);
+                }
+
+                myView.setBackgroundColor(Color.GRAY);
+                adapterView = myAdapter;
+
+                currentSong_Num = myItemInt;
+                mp3Player.stop();//stop music if still playing music
+                mp3Player.load(selectedFromList.getPath());//load and play music selected
+                playButton.setImageResource(R.drawable.pause_button);//change the image button to pause
+                seekBar.setMax(mp3Player.getDuration()/1000);//set max of seek bar
+
+                //set total duration of song
                 totalDuration.setText(String.format("%02d:%02d",
-                        TimeUnit.MILLISECONDS.toMinutes(mp3Player.getDuration())% TimeUnit.HOURS.toMinutes(1),
-                        TimeUnit.MILLISECONDS.toSeconds(mp3Player.getDuration())% TimeUnit.MINUTES.toSeconds(1)));
+                TimeUnit.MILLISECONDS.toMinutes(mp3Player.getDuration())% TimeUnit.HOURS.toMinutes(1),
+                TimeUnit.MILLISECONDS.toSeconds(mp3Player.getDuration())% TimeUnit.MINUTES.toSeconds(1)));
 
+                //update time of the current progress of music every second
                 MainActivity.this.runOnUiThread(new Runnable() {
 
                     @Override
                     public void run() {
                         if(mp3Player != null){
-                            int mCurrentPosition = mp3Player.getProgress() / 1000;
-                            seekBar.setProgress(mCurrentPosition);
+                            int curPosition = mp3Player.getProgress() / 1000;
+                            seekBar.setProgress(curPosition);
 
                             currentTime.setText(String.format("%02d:%02d",
                                     TimeUnit.MILLISECONDS.toMinutes(mp3Player.getProgress())% TimeUnit.HOURS.toMinutes(1),
                                     TimeUnit.MILLISECONDS.toSeconds(mp3Player.getProgress())% TimeUnit.MINUTES.toSeconds(1)));
                         }
-                        mHandler.postDelayed(this, 1000);
+                        mHandler.postDelayed(this, 1000);//wait for one second before displaying
                     }
                 });
 
@@ -178,6 +188,70 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(MainActivity.this,"Choose a song to play first.",Toast.LENGTH_SHORT).show();
         }
 
+    }
+
+    public void setPreviousSong(View view){
+        if(mp3Player.getState() == MP3Player.MP3PlayerState.PLAYING || mp3Player.getState() == MP3Player.MP3PlayerState.PAUSED){
+            if(currentSong_Num > 0 && currentSong_Num < songList.size()){
+                playButton.setImageResource(R.drawable.pause_button);
+                currentSong_Num--;
+                mp3Player.stop();
+                mp3Player.load(songList.get(currentSong_Num).getPath());
+            }
+            else if(currentSong_Num == 0){
+                playButton.setImageResource(R.drawable.pause_button);
+                currentSong_Num = songList.size()-1;
+                mp3Player.stop();
+                mp3Player.load(songList.get(currentSong_Num).getPath());
+            }
+        }
+        else if(mp3Player.getState() == MP3Player.MP3PlayerState.STOPPED){
+            Toast.makeText(MainActivity.this,"Choose a song to play first.",Toast.LENGTH_SHORT).show();
+        }
+
+        for(int i = 0; i < adapterView.getChildCount(); i++)
+        {
+            adapterView.getChildAt(i).setBackgroundColor(Color.WHITE);
+        }
+
+        adapterView.getChildAt(currentSong_Num).setBackgroundColor(Color.GRAY);
+
+    }
+
+    public void setNextSong(View view){
+        if(mp3Player.getState() == MP3Player.MP3PlayerState.PLAYING || mp3Player.getState() == MP3Player.MP3PlayerState.PAUSED){
+            if(currentSong_Num >= 0 && currentSong_Num < songList.size()-1){
+                playButton.setImageResource(R.drawable.pause_button);
+                currentSong_Num++;
+                mp3Player.stop();
+                mp3Player.load(songList.get(currentSong_Num).getPath());
+            }
+            else if(currentSong_Num == songList.size()-1){
+                playButton.setImageResource(R.drawable.pause_button);
+                currentSong_Num = 0;
+                mp3Player.stop();
+                mp3Player.load(songList.get(currentSong_Num).getPath());
+            }
+
+        }
+        else if(mp3Player.getState() == MP3Player.MP3PlayerState.STOPPED){
+            Toast.makeText(MainActivity.this,"Choose a song to play first.",Toast.LENGTH_SHORT).show();
+        }
+
+        for(int i = 0; i < adapterView.getChildCount(); i++)
+        {
+            adapterView.getChildAt(i).setBackgroundColor(Color.WHITE);
+        }
+
+        adapterView.getChildAt(currentSong_Num).setBackgroundColor(Color.GRAY);
+    }
+
+    public void stopSong(View view){
+        mp3Player.stop();
+        for(int i = 0; i < adapterView.getChildCount(); i++)
+        {
+            adapterView.getChildAt(i).setBackgroundColor(Color.WHITE);
+        }
     }
 
 }

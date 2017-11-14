@@ -6,12 +6,14 @@
     android:layout_height="fill_parent"
     android:layout_gravity="center"
     android:orientation="horizontal"
+    android:background="#3030"
     tools:context="com.example.durai23.musicplayerapp.MainActivity">
 
     <ListView
         android:id="@+id/listView"
         android:layout_width="match_parent"
-        android:layout_height="390dp" >
+        android:layout_height="390dp"
+        android:background="#fdfdfd">
     </ListView>
 
     <SeekBar
@@ -39,38 +41,65 @@
         android:layout_below="@+id/progressBar"
         android:text="" />
 
-    <ImageButton
-        android:id="@+id/play_button"
-        android:background="@android:color/transparent"
-        android:layout_width="75dp"
-        android:layout_height="75dp"
-        android:src="@drawable/play_button"
-        android:padding="20dp"
-        android:layout_below="@+id/currentTime"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="14dp"
-        android:onClick="play_pauseOnClick"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:layout_below="@+id/currentTime">
 
-    <ImageButton
-        android:id="@+id/back_button"
-        android:layout_width="75dp"
-        android:layout_height="75dp"
-        android:src="@drawable/backwards_button"
-        android:background="@android:color/transparent"
-        android:scaleType="fitCenter"
-        android:layout_alignTop="@+id/play_button"
-        android:layout_toStartOf="@+id/play_button"
-        android:layout_marginEnd="17dp" />
+        <ImageButton
+            android:id="@+id/back_button"
+            android:layout_width="75dp"
+            android:layout_height="75dp"
+            android:layout_alignTop="@+id/play_button"
+            android:layout_marginStart="27dp"
+            android:layout_toEndOf="@+id/currentTime"
+            android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:onClick="setPreviousSong"
+            android:padding="10dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/backwards_button" />
 
-    <ImageButton
-        android:id="@+id/forward_button"
-        android:layout_width="75dp"
-        android:layout_height="75dp"
-        android:src="@drawable/forwards_button"
-        android:background="@android:color/transparent"
-        android:scaleType="fitCenter"
-        android:layout_alignTop="@+id/play_button"
-        android:layout_toEndOf="@+id/play_button"
-        android:layout_marginStart="17dp" />
+        <ImageButton
+            android:id="@+id/play_button"
+            android:layout_width="75dp"
+            android:layout_height="75dp"
+            android:layout_below="@+id/currentTime"
+            android:layout_marginStart="26dp"
+            android:layout_toEndOf="@+id/back_button"
+            android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:onClick="play_pauseOnClick"
+            android:padding="20dp"
+            android:src="@drawable/play_button" />
+
+        <ImageButton
+            android:id="@+id/forward_button"
+            android:layout_width="75dp"
+            android:layout_height="75dp"
+            android:layout_alignTop="@+id/play_button"
+            android:layout_marginStart="17dp"
+            android:layout_toEndOf="@+id/play_button"
+            android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:onClick="setNextSong"
+            android:padding="10dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/forwards_button" />
+
+        <ImageButton
+            android:id="@+id/stop_button"
+            android:layout_width="75dp"
+            android:layout_height="75dp"
+            android:layout_alignTop="@+id/forward_button"
+            android:layout_marginStart="17dp"
+            android:layout_toEndOf="@+id/forward_button"
+            android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:padding="10dp"
+            android:src="@drawable/stop_button"
+            android:onClick="stopSong"/>
+    </LinearLayout>
 
 </RelativeLayout>
