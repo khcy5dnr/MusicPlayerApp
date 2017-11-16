@@ -1,12 +1,18 @@
 package com.example.durai23.musicplayerapp;
 
 import android.Manifest;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Environment;
+import android.os.PersistableBundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -42,10 +48,22 @@ public class MainActivity extends AppCompatActivity {
     private int currentSong_Num = -1;
     private AdapterView adapterView;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Toast.makeText(MainActivity.this,"onCreate called",Toast.LENGTH_SHORT).show();
+
+        if(savedInstanceState != null){
+            Toast.makeText(MainActivity.this,"NEW DATA FOUND",Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this,Integer.toString(savedInstanceState.getInt("currentSongNum")),Toast.LENGTH_SHORT).show();
+
+        }
+        else if(savedInstanceState == null){
+            Toast.makeText(MainActivity.this,"NEW ENTRY",Toast.LENGTH_SHORT).show();
+        }
 
         //check for permission
         if(ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE)
@@ -91,6 +109,7 @@ public class MainActivity extends AppCompatActivity {
 
         listView.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,songName_list));
         listView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> myAdapter, View myView, int myItemInt,long mylng){
                 File selectedFromList = songList.get(myItemInt);
@@ -149,8 +168,6 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-
-        Toast.makeText(MainActivity.this,"Total MP3 songs: "+ Integer.toString(songList.size()),Toast.LENGTH_SHORT).show();
     }
 
     private void scanMP3_Files(File directory){
@@ -254,4 +271,36 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        Toast.makeText(MainActivity.this,"onSave Called",Toast.LENGTH_SHORT).show();
+
+        if(mp3Player.getState() == MP3Player.MP3PlayerState.PLAYING){
+            savedInstanceState.putInt("currentSongNum",currentSong_Num);
+            Toast.makeText(MainActivity.this,"data saved.",Toast.LENGTH_SHORT).show();
+        }
+
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Toast.makeText(MainActivity.this,"STOPPED",Toast.LENGTH_SHORT).show();
+        startService(new Intent(this,MusicService.class));
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Toast.makeText(MainActivity.this,"DESTROYED",Toast.LENGTH_SHORT).show();
+        stopService(new Intent(this,MusicService.class));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Toast.makeText(MainActivity.this,"RESUMED",Toast.LENGTH_SHORT).show();
+        stopService(new Intent(this,MusicService.class));
+    }
 }
