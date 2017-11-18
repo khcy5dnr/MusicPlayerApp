@@ -4,6 +4,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.IntDef;
 import android.support.annotation.Nullable;
@@ -20,6 +21,7 @@ public class MusicService extends Service {
     NotificationManager notificationManager;
     static final int NOTIFICATION_ID = 2;
 
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -28,15 +30,15 @@ public class MusicService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Toast.makeText(this,"Service started",Toast.LENGTH_SHORT).show();
 
         //notification starts when the main activity is stopped.
         musicNotification = new NotificationCompat.Builder(this);
         musicNotification.setAutoCancel(true);
 
         musicNotification.setSmallIcon(R.drawable.notification_icon);
-        musicNotification.setContentTitle("Music Player is playing...");
-        musicNotification.setContentText("TITLE");
+        musicNotification.setContentTitle("MUSIC PLAYER");
+        musicNotification.setContentText(intent.getExtras().getString("songName"));
+        musicNotification.setOngoing(true);
 
         Intent intentNotification = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this,0,intentNotification,PendingIntent.FLAG_UPDATE_CURRENT);
@@ -52,6 +54,5 @@ public class MusicService extends Service {
     public void onDestroy() {
         super.onDestroy();
         notificationManager.cancel(NOTIFICATION_ID);
-        Toast.makeText(this,"Service stopped",Toast.LENGTH_SHORT).show();
     }
 }

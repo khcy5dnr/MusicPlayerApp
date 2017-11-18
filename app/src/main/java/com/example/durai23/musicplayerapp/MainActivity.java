@@ -16,6 +16,7 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -42,11 +43,15 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<File> songList = new ArrayList<File>();
     private SeekBar seekBar;
     private TextView currentTime;
+    private String[] songName_list;
     private TextView totalDuration;
     private ImageButton playButton;
+    private ImageButton nextButton;
     private Handler mHandler = new Handler();
     private int currentSong_Num = -1;
     private AdapterView adapterView;
+    private ListView listView;
+    private boolean flag = true;
 
 
     @Override
@@ -54,16 +59,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Toast.makeText(MainActivity.this,"onCreate called",Toast.LENGTH_SHORT).show();
-
-        if(savedInstanceState != null){
-            Toast.makeText(MainActivity.this,"NEW DATA FOUND",Toast.LENGTH_SHORT).show();
-            Toast.makeText(MainActivity.this,Integer.toString(savedInstanceState.getInt("currentSongNum")),Toast.LENGTH_SHORT).show();
-
-        }
-        else if(savedInstanceState == null){
-            Toast.makeText(MainActivity.this,"NEW ENTRY",Toast.LENGTH_SHORT).show();
-        }
 
         //check for permission
         if(ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE)
@@ -81,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
         currentTime = (TextView) findViewById(R.id.currentTime);
         totalDuration = (TextView) findViewById(R.id.totalDuration);
         playButton = (ImageButton) findViewById(R.id.play_button);
+        nextButton = (ImageButton) findViewById(R.id.forward_button);
 
     }
 
@@ -97,10 +93,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadSongs_listView(){
 
-        final ListView listView = (ListView)findViewById(R.id.listView);
+        listView = (ListView)findViewById(R.id.listView);
         File musicDir = new File(Environment.getExternalStorageDirectory().getPath());
         scanMP3_Files(musicDir);// scan the entire storage for mp3 files
-        String[] songName_list = new String[songList.size()];
+        songName_list = new String[songList.size()];
 
         //get name of songs from list to display
         for(int i = 0; i < songName_list.length; i++){
@@ -113,10 +109,10 @@ public class MainActivity extends AppCompatActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> myAdapter, View myView, int myItemInt,long mylng){
                 File selectedFromList = songList.get(myItemInt);
-
-                for(int i = 0; i < myAdapter.getChildCount(); i++)
+                flag = true;
+                if(currentSong_Num != -1)
                 {
-                    myAdapter.getChildAt(i).setBackgroundColor(Color.WHITE);
+                    myAdapter.getChildAt(currentSong_Num).setBackgroundColor(Color.WHITE);
                 }
 
                 myView.setBackgroundColor(Color.GRAY);
@@ -126,12 +122,7 @@ public class MainActivity extends AppCompatActivity {
                 mp3Player.stop();//stop music if still playing music
                 mp3Player.load(selectedFromList.getPath());//load and play music selected
                 playButton.setImageResource(R.drawable.pause_button);//change the image button to pause
-                seekBar.setMax(mp3Player.getDuration()/1000);//set max of seek bar
 
-                //set total duration of song
-                totalDuration.setText(String.format("%02d:%02d",
-                TimeUnit.MILLISECONDS.toMinutes(mp3Player.getDuration())% TimeUnit.HOURS.toMinutes(1),
-                TimeUnit.MILLISECONDS.toSeconds(mp3Player.getDuration())% TimeUnit.MINUTES.toSeconds(1)));
 
                 //update time of the current progress of music every second
                 MainActivity.this.runOnUiThread(new Runnable() {
@@ -146,7 +137,21 @@ public class MainActivity extends AppCompatActivity {
                                     TimeUnit.MILLISECONDS.toMinutes(mp3Player.getProgress())% TimeUnit.HOURS.toMinutes(1),
                                     TimeUnit.MILLISECONDS.toSeconds(mp3Player.getProgress())% TimeUnit.MINUTES.toSeconds(1)));
                         }
+                        if(seekBar.getProgress() >= seekBar.getMax()){
+                            nextButton.performClick();
+                        }
+                        if(flag){
+                            seekBar.setMax(mp3Player.getDuration()/1000);//set max of seek bar
+
+                            //set total duration of song
+                            totalDuration.setText(String.format("%02d:%02d",
+                                    TimeUnit.MILLISECONDS.toMinutes(mp3Player.getDuration())% TimeUnit.HOURS.toMinutes(1),
+                                    TimeUnit.MILLISECONDS.toSeconds(mp3Player.getDuration())% TimeUnit.MINUTES.toSeconds(1)));
+                            flag = false;
+                        }
+
                         mHandler.postDelayed(this, 1000);//wait for one second before displaying
+
                     }
                 });
 
@@ -165,6 +170,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 });
+
 
             }
         });
@@ -196,10 +202,12 @@ public class MainActivity extends AppCompatActivity {
         if(mp3Player.getState() == MP3Player.MP3PlayerState.PLAYING){
             playButton.setImageResource(R.drawable.play_button);
             mp3Player.pause();
+            Log.d("pauseSong invoked","Pause song OK.");
         }
         else if(mp3Player.getState() == MP3Player.MP3PlayerState.PAUSED){
             playButton.setImageResource(R.drawable.pause_button);
             mp3Player.play();
+            Log.d("playSong invoked","Play song OK.");
         }
         else if(mp3Player.getState() == MP3Player.MP3PlayerState.STOPPED){
             Toast.makeText(MainActivity.this,"Choose a song to play first.",Toast.LENGTH_SHORT).show();
@@ -209,6 +217,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void setPreviousSong(View view){
         if(mp3Player.getState() == MP3Player.MP3PlayerState.PLAYING || mp3Player.getState() == MP3Player.MP3PlayerState.PAUSED){
+            adapterView.getChildAt(currentSong_Num).setBackgroundColor(Color.WHITE);
+            flag = true;
             if(currentSong_Num > 0 && currentSong_Num < songList.size()){
                 playButton.setImageResource(R.drawable.pause_button);
                 currentSong_Num--;
@@ -226,17 +236,15 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(MainActivity.this,"Choose a song to play first.",Toast.LENGTH_SHORT).show();
         }
 
-        for(int i = 0; i < adapterView.getChildCount(); i++)
-        {
-            adapterView.getChildAt(i).setBackgroundColor(Color.WHITE);
-        }
-
         adapterView.getChildAt(currentSong_Num).setBackgroundColor(Color.GRAY);
+        Log.d("setPreviousSong invoked","Previous song OK.");
 
     }
 
     public void setNextSong(View view){
         if(mp3Player.getState() == MP3Player.MP3PlayerState.PLAYING || mp3Player.getState() == MP3Player.MP3PlayerState.PAUSED){
+            adapterView.getChildAt(currentSong_Num).setBackgroundColor(Color.WHITE);
+            flag = true;
             if(currentSong_Num >= 0 && currentSong_Num < songList.size()-1){
                 playButton.setImageResource(R.drawable.pause_button);
                 currentSong_Num++;
@@ -255,52 +263,40 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(MainActivity.this,"Choose a song to play first.",Toast.LENGTH_SHORT).show();
         }
 
-        for(int i = 0; i < adapterView.getChildCount(); i++)
-        {
-            adapterView.getChildAt(i).setBackgroundColor(Color.WHITE);
-        }
 
         adapterView.getChildAt(currentSong_Num).setBackgroundColor(Color.GRAY);
+        Log.d("setNextSong invoked","Next song OK.");
     }
 
     public void stopSong(View view){
         mp3Player.stop();
-        for(int i = 0; i < adapterView.getChildCount(); i++)
-        {
-            adapterView.getChildAt(i).setBackgroundColor(Color.WHITE);
-        }
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle savedInstanceState) {
-        super.onSaveInstanceState(savedInstanceState);
-        Toast.makeText(MainActivity.this,"onSave Called",Toast.LENGTH_SHORT).show();
-
-        if(mp3Player.getState() == MP3Player.MP3PlayerState.PLAYING){
-            savedInstanceState.putInt("currentSongNum",currentSong_Num);
-            Toast.makeText(MainActivity.this,"data saved.",Toast.LENGTH_SHORT).show();
-        }
-
+        playButton.setImageResource(R.drawable.play_button);
+        adapterView.getChildAt(currentSong_Num).setBackgroundColor(Color.WHITE);
+        Log.d("stopSong invoked","Media player stopped music. OK.");
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        Toast.makeText(MainActivity.this,"STOPPED",Toast.LENGTH_SHORT).show();
-        startService(new Intent(this,MusicService.class));
+        Bundle bundle = new Bundle();
+        bundle.putString("songName",songName_list[currentSong_Num]);
+        Intent intent = new Intent(this,MusicService.class);
+        intent.putExtras(bundle);
+        startService(intent);
+        Log.d("onStop invoked","Service started.");
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Toast.makeText(MainActivity.this,"DESTROYED",Toast.LENGTH_SHORT).show();
         stopService(new Intent(this,MusicService.class));
+        Log.d("onDestroy invoked","Service stopped.");
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Toast.makeText(MainActivity.this,"RESUMED",Toast.LENGTH_SHORT).show();
         stopService(new Intent(this,MusicService.class));
+        Log.d("onResume invoked","Service stopped.");
     }
 }

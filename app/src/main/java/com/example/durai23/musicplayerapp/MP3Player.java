@@ -100,4 +100,6 @@ public class MP3Player {
     public void seek(int seconds){
         mediaPlayer.seekTo(seconds);
     }
+
+
 }
