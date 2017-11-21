@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 public class MainActivity extends AppCompatActivity {
 
     static final int READ_STORAGE_REQUEST_CODE = 1;
+    static final String TAG = "MusicApp";
 
     private MP3Player mp3Player = new MP3Player();
     private ArrayList<File> songList = new ArrayList<File>();
@@ -108,6 +109,7 @@ public class MainActivity extends AppCompatActivity {
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> myAdapter, View myView, int myItemInt,long mylng){
+                Log.i(TAG,"Play song OK.");
                 File selectedFromList = songList.get(myItemInt);
                 flag = true;
                 if(currentSong_Num != -1)
@@ -202,12 +204,12 @@ public class MainActivity extends AppCompatActivity {
         if(mp3Player.getState() == MP3Player.MP3PlayerState.PLAYING){
             playButton.setImageResource(R.drawable.play_button);
             mp3Player.pause();
-            Log.d("pauseSong invoked","Pause song OK.");
+            Log.i(TAG,"Pause song OK.");
         }
         else if(mp3Player.getState() == MP3Player.MP3PlayerState.PAUSED){
             playButton.setImageResource(R.drawable.pause_button);
             mp3Player.play();
-            Log.d("playSong invoked","Play song OK.");
+            Log.i(TAG,"Play song OK.");
         }
         else if(mp3Player.getState() == MP3Player.MP3PlayerState.STOPPED){
             Toast.makeText(MainActivity.this,"Choose a song to play first.",Toast.LENGTH_SHORT).show();
@@ -237,7 +239,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         adapterView.getChildAt(currentSong_Num).setBackgroundColor(Color.GRAY);
-        Log.d("setPreviousSong invoked","Previous song OK.");
+        Log.i(TAG,"Previous song OK.");
 
     }
 
@@ -265,38 +267,41 @@ public class MainActivity extends AppCompatActivity {
 
 
         adapterView.getChildAt(currentSong_Num).setBackgroundColor(Color.GRAY);
-        Log.d("setNextSong invoked","Next song OK.");
+        Log.i(TAG,"Next song OK.");
     }
 
     public void stopSong(View view){
         mp3Player.stop();
         playButton.setImageResource(R.drawable.play_button);
         adapterView.getChildAt(currentSong_Num).setBackgroundColor(Color.WHITE);
-        Log.d("stopSong invoked","Media player stopped music. OK.");
+        Log.i(TAG,"Media player stopped music. OK.");
     }
 
     @Override
     protected void onStop() {
+        //when activity is stopped, the service will be started.
         super.onStop();
         Bundle bundle = new Bundle();
         bundle.putString("songName",songName_list[currentSong_Num]);
         Intent intent = new Intent(this,MusicService.class);
         intent.putExtras(bundle);
         startService(intent);
-        Log.d("onStop invoked","Service started.");
+        Log.i(TAG,"Service started.");
     }
 
     @Override
     protected void onDestroy() {
+        //when activity is destroyed, the service will be stopped.
         super.onDestroy();
         stopService(new Intent(this,MusicService.class));
-        Log.d("onDestroy invoked","Service stopped.");
+        Log.i("onDestroy invoked","Service stopped and app destroyed.");
     }
 
     @Override
     protected void onResume() {
+        //when activity is resumed, the service will be stopped.
         super.onResume();
         stopService(new Intent(this,MusicService.class));
-        Log.d("onResume invoked","Service stopped.");
+        Log.i(TAG,"Service stopped.");
     }
 }
